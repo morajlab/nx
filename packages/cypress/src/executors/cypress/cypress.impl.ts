@@ -3,6 +3,7 @@ import { installedCypressVersion } from '../../utils/cypress-version';
 import {
   ExecutorContext,
   logger,
+  parseTargetString,
   runExecutor,
   stripIndents,
 } from '@nrwl/devkit';
@@ -31,6 +32,7 @@ export interface CypressExecutorOptions extends Json {
   ignoreTestFiles?: string;
   reporter?: string;
   reporterOptions?: string;
+  skipServe: boolean;
 }
 
 try {
@@ -105,12 +107,16 @@ async function* startDevServer(
   context: ExecutorContext
 ) {
   // no dev server, return the provisioned base url
-  if (!opts.devServerTarget) {
+  if (!opts.devServerTarget || opts.skipServe) {
     yield opts.baseUrl;
     return;
   }
 
-  const [project, target, configuration] = opts.devServerTarget.split(':');
+  console.log('VALUE....', parseTargetString(opts.devServerTarget));
+
+  const { project, target, configuration } = parseTargetString(
+    opts.devServerTarget
+  );
   for await (const output of await runExecutor<{
     success: boolean;
     baseUrl?: string;
@@ -144,7 +150,7 @@ async function runCypress(baseUrl: string, opts: CypressExecutorOptions) {
 
   // If not, will use the `baseUrl` normally from `cypress.json`
   if (baseUrl) {
-    options.config = { baseUrl: baseUrl };
+    options.config = { baseUrl };
   }
 
   if (opts.browser) {

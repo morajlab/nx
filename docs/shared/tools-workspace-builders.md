@@ -4,9 +4,9 @@ Creating Nx Executors/Angular Devkit Builders for your workspace standardizes sc
 
 This guide will show you how to create, run, and customize executors/builders within your Nx workspace. In the examples, we'll use the trivial use-case of an `echo` command.
 
-## Creating a Builder with @angular/devkit
+## Creating a Builder with @angular-devkit
 
-Note: In this article, we'll refer to executors that use the `@angular/devkit` as Angular Devkit Builders.
+> Note: In this article, we'll refer to executors that use the `@angular-devkit` as Angular Devkit Builders.
 
 Your executor should be created within the `tools` directory of your Nx workspace like so:
 
@@ -140,7 +140,7 @@ The `builder.json` file provides the description of your builder to the CLI.
 }
 ```
 
-Note that this `builder.json` file is naming our builder 'echo' for the CLI's purposes, and maping that name to the given implemetation file and schema.
+Note that this `builder.json` file is naming our builder 'echo' for the CLI's purposes, and mapping that name to the given implementation file and schema.
 
 ### package.json
 

@@ -39,6 +39,51 @@ describe('app', () => {
         ],
       }
     `);
+
+    const eslintrcJson = readJsonInTree(
+      tree,
+      'apps/my-node-app/.eslintrc.json'
+    );
+    expect(eslintrcJson).toMatchInlineSnapshot(`
+      Object {
+        "extends": Array [
+          "../../.eslintrc.json",
+        ],
+        "ignorePatterns": Array [
+          "!**/*",
+        ],
+        "overrides": Array [
+          Object {
+            "files": Array [
+              "*.ts",
+              "*.tsx",
+              "*.js",
+              "*.jsx",
+            ],
+            "parserOptions": Object {
+              "project": Array [
+                "apps/my-node-app/tsconfig.*?.json",
+              ],
+            },
+            "rules": Object {},
+          },
+          Object {
+            "files": Array [
+              "*.ts",
+              "*.tsx",
+            ],
+            "rules": Object {},
+          },
+          Object {
+            "files": Array [
+              "*.js",
+              "*.jsx",
+            ],
+            "rules": Object {},
+          },
+        ],
+      }
+    `);
   });
 
   it('should add types to the tsconfig.app.json', async () => {

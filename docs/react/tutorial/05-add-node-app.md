@@ -1,6 +1,6 @@
-# Step 5: Add Node Application Implementing API
+# React Nx Tutorial - Step 5: Add Node Application Implementing API
 
-## Video of this Lesson
+## Nx.dev Tutorial | React | Step 5: Add Node Application Implementing API
 
 <iframe width="560" height="315" src="https://www.youtube.com/embed/XgfknOqgxQ0" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
 
@@ -74,21 +74,21 @@ After this is done, you should see something like this:
 ```treeview
 myorg/
 ├── apps/
-│   ├── todos/
-│   ├── todos-e2e/
-│   └── api/
-│       ├── src/
-│       │   ├── app/
-│       │   ├── assets/
-│       │   ├── environments/
-│       │   │   ├── environment.ts
-│       │   │   └── environment.prod.ts
-│       │   └── main.ts
-│       ├── jest.conf.js
-│       ├── proxy.conf.json
-│       ├── tsconfig.app.json
-│       ├── tsconfig.json
-│       └── tsconfig.spec.json
+│   ├── todos/
+│   ├── todos-e2e/
+│   └── api/
+│       ├── src/
+│       │   ├── app/
+│       │   ├── assets/
+│       │   ├── environments/
+│       │   │   ├── environment.ts
+│       │   │   └── environment.prod.ts
+│       │   └── main.ts
+│       ├── jest.conf.js
+│       ├── proxy.conf.json
+│       ├── tsconfig.app.json
+│       ├── tsconfig.json
+│       └── tsconfig.spec.json
 ├── libs/
 ├── tools/
 ├── workspace.json

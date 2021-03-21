@@ -1,6 +1,6 @@
-# Step 7: Share Code
+# React Nx Tutorial - Step 7: Share Code
 
-## Video of this Lesson
+## Nx.dev Tutorial | React | Step 7: Share Code
 
 <iframe width="560" height="315" src="https://www.youtube.com/embed/-zzw4_oT_2I" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
 
@@ -17,19 +17,19 @@ The result should look like this:
 ```treeview
 myorg/
 ├── apps/
-│   ├── todos/
-│   ├── todos-e2e/
-│   └── api/
+│   ├── todos/
+│   ├── todos-e2e/
+│   └── api/
 ├── libs/
-│   └── data/
-│       ├── src/
-│       │   ├── lib/
+│   └── data/
+│       ├── src/
+│       │   ├── lib/
 │       │   │   └── data.ts
-│       │   └── index.ts
-│       ├── jest.conf.js
-│       ├── tsconfig.app.json
-│       ├── tsconfig.json
-│       └── tsconfig.spec.json
+│       │   └── index.ts
+│       ├── jest.conf.js
+│       ├── tsconfig.app.json
+│       ├── tsconfig.json
+│       └── tsconfig.spec.json
 ├── tools/
 ├── nx.json
 ├── package.json

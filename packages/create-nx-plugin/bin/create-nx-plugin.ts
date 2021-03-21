@@ -1,15 +1,15 @@
 #!/usr/bin/env node
 
 // we can't import from '@nrwl/workspace' because it will require typescript
-import { output } from '@nrwl/workspace/src/utilities/output';
 import { getPackageManagerCommand } from '@nrwl/tao/src/shared/package-manager';
-import { dirSync } from 'tmp';
-import { writeFileSync, readFileSync, removeSync } from 'fs-extra';
-import * as path from 'path';
+import { output } from '@nrwl/workspace/src/utilities/output';
 import { execSync } from 'child_process';
+import { readFileSync, removeSync, writeFileSync } from 'fs-extra';
 import * as inquirer from 'inquirer';
-import yargsParser = require('yargs-parser');
+import * as path from 'path';
+import { dirSync } from 'tmp';
 import { showNxWarning } from './shared';
+import yargsParser = require('yargs-parser');
 
 const tsVersion = 'TYPESCRIPT_VERSION';
 const cliVersion = 'NX_VERSION';
@@ -17,9 +17,11 @@ const nxVersion = 'NX_VERSION';
 const prettierVersion = 'PRETTIER_VERSION';
 
 const parsedArgs = yargsParser(process.argv, {
-  string: ['pluginName', 'packageManager'],
+  string: ['pluginName', 'packageManager', 'importPath'],
   alias: {
+    importPath: 'import-path',
     pluginName: 'plugin-name',
+    packageManager: 'pm',
   },
   boolean: ['help'],
 });
@@ -78,24 +80,27 @@ function createWorkspace(
   });
 }
 
-function createNxPlugin(workspaceName, pluginName, packageManager) {
-  console.log(
-    `nx generate @nrwl/nx-plugin:plugin ${pluginName} --importPath=${workspaceName}/${pluginName}`
-  );
+function createNxPlugin(
+  workspaceName,
+  pluginName,
+  packageManager,
+  parsedArgs: any
+) {
+  const importPath = parsedArgs.importPath ?? `${workspaceName}/${pluginName}`;
+  const command = `nx generate @nrwl/nx-plugin:plugin ${pluginName} --importPath=${importPath}`;
+  console.log(command);
+
   const pmc = getPackageManagerCommand(packageManager);
-  execSync(
-    `${pmc.exec} nx generate @nrwl/nx-plugin:plugin ${pluginName} --importPath=${workspaceName}/${pluginName}`,
-    {
-      cwd: workspaceName,
-      stdio: [0, 1, 2],
-    }
-  );
+  execSync(`${pmc.exec} ${command}`, {
+    cwd: workspaceName,
+    stdio: [0, 1, 2],
+  });
 }
 
 function updateWorkspace(workspaceName: string) {
   const nxJsonPath = path.join(workspaceName, 'nx.json');
 
-  const nxJson = JSON.parse(readFileSync(nxJsonPath).toString('UTF-8'));
+  const nxJson = JSON.parse(readFileSync(nxJsonPath).toString('utf-8'));
 
   nxJson['workspaceLayout'] = {
     appsDir: 'e2e',
@@ -177,13 +182,13 @@ function showHelp() {
 
   Create a new Nx workspace
 
-  Args: 
+  Args:
 
     name           workspace name (e.g., org name)
 
   Options:
 
-    pluginName     the name of the plugin to be created  
+    pluginName     the name of the plugin to be created
 `);
 }
 
@@ -198,7 +203,7 @@ determineWorkspaceName(parsedArgs).then((workspaceName) => {
     const tmpDir = createSandbox(packageManager);
     createWorkspace(tmpDir, packageManager, parsedArgs, workspaceName);
     updateWorkspace(workspaceName);
-    createNxPlugin(workspaceName, pluginName, packageManager);
+    createNxPlugin(workspaceName, pluginName, packageManager, parsedArgs);
     commitChanges(workspaceName);
     showNxWarning(workspaceName);
   });

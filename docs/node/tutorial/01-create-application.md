@@ -1,6 +1,6 @@
-# Step 1: Create Application
+# Node Nx Tutorial - Step 1: Create Application
 
-## Video of this Lesson
+## Nx.dev Tutorial | Node | Step 1: Create Application
 
 <iframe width="560" height="315" src="https://www.youtube.com/embed/UcBSBQYNlhE" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
 
@@ -26,26 +26,26 @@ You will then receive the following prompts in your command line:
 myorg/
 ├── README.md
 ├── apps/
-│   └── todos/
-│       ├── jest.config.js
-│       ├── src/
-│       │   ├── app/
-│       │   │   ├── app.controller.spec.ts
-│       │   │   ├── app.controller.ts
-│       │   │   ├── app.module.ts
-│       │   │   ├── app.service.spec.ts
-│       │   │   └── app.service.ts
-│       │   ├── assets/
-│       │   ├── environments/
-│       │   │   ├── environment.prod.ts
-│       │   │   └── environment.ts
-│       │   └── main.ts
-│       ├── tsconfig.app.json
-│       ├── tsconfig.json
-│       └── tsconfig.spec.json
+│   └── todos/
+│       ├── jest.config.js
+│       ├── src/
+│       │   ├── app/
+│       │   │   ├── app.controller.spec.ts
+│       │   │   ├── app.controller.ts
+│       │   │   ├── app.module.ts
+│       │   │   ├── app.service.spec.ts
+│       │   │   └── app.service.ts
+│       │   ├── assets/
+│       │   ├── environments/
+│       │   │   ├── environment.prod.ts
+│       │   │   └── environment.ts
+│       │   └── main.ts
+│       ├── tsconfig.app.json
+│       ├── tsconfig.json
+│       └── tsconfig.spec.json
 ├── tools/
-│   ├── generators
-│   └── tsconfig.tools.json
+│   ├── generators
+│   └── tsconfig.tools.json
 ├── jest.config.js
 ├── libs
 ├── nx.json

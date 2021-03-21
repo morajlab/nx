@@ -28,6 +28,8 @@
       "@nrwl/express": ["./packages/express"],
       "@nrwl/nest": ["./packages/nest"],
       "@nrwl/next": ["./packages/next"],
+      "@nrwl/node": ["./packages/node"],
+      "@nrwl/node/*": ["./packages/node/*"],
       "@nrwl/linter": ["./packages/linter"],
       "@nrwl/jest": ["./packages/jest"],
       "@nrwl/workspace/testing": ["./packages/workspace/testing"],
@@ -39,7 +41,10 @@
       "@nrwl/angular": ["./packages/angular"],
       "@nrwl/angular/*": ["./packages/angular/*"],
       "@nrwl/e2e/utils": ["./e2e/utils"],
-      "@nrwl/e2e/cli": ["./e2e/cli"]
+      "@nrwl/e2e/cli": ["./e2e/cli"],
+      "@popo-tool/cli": ["packages/popo-cli/src/index.ts"],
+      "@popo-tool/core": ["packages/popo-core/src/index.ts"],
+      "@moraj/bolt": ["packages/bolt/src/index.ts"]
     }
   }
 }

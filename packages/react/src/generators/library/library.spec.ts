@@ -16,6 +16,7 @@ describe('lib', () => {
     unitTestRunner: 'jest',
     style: 'css',
     component: true,
+    strict: false,
   };
 
   beforeEach(() => {
@@ -117,6 +118,49 @@ describe('lib', () => {
       expect(
         appTree.exists('libs/my-lib/src/lib/my-lib.spec.tsx')
       ).toBeTruthy();
+
+      const eslintJson = readJson(appTree, 'libs/my-lib/.eslintrc.json');
+      expect(eslintJson).toMatchInlineSnapshot(`
+        Object {
+          "extends": Array [
+            "plugin:@nrwl/nx/react",
+            "../../.eslintrc.json",
+          ],
+          "ignorePatterns": Array [
+            "!**/*",
+          ],
+          "overrides": Array [
+            Object {
+              "files": Array [
+                "*.ts",
+                "*.tsx",
+                "*.js",
+                "*.jsx",
+              ],
+              "parserOptions": Object {
+                "project": Array [
+                  "libs/my-lib/tsconfig.*?.json",
+                ],
+              },
+              "rules": Object {},
+            },
+            Object {
+              "files": Array [
+                "*.ts",
+                "*.tsx",
+              ],
+              "rules": Object {},
+            },
+            Object {
+              "files": Array [
+                "*.js",
+                "*.jsx",
+              ],
+              "rules": Object {},
+            },
+          ],
+        }
+      `);
     });
   });
 
@@ -444,10 +488,6 @@ describe('lib', () => {
 
       const workspaceJson = readJson(appTree, '/workspace.json');
       const babelrc = readJson(appTree, 'libs/my-lib/.babelrc');
-      const babelJestConfig = readJson(
-        appTree,
-        'libs/my-lib/babel-jest.config.json'
-      );
 
       expect(workspaceJson.projects['my-lib'].architect.build).toMatchObject({
         options: {
@@ -455,7 +495,6 @@ describe('lib', () => {
         },
       });
       expect(babelrc.plugins).toContain('styled-jsx/babel');
-      expect(babelJestConfig.plugins).toContain('styled-jsx/babel');
     });
 
     it('should support style none', async () => {
@@ -538,6 +577,42 @@ describe('lib', () => {
       }
 
       expect.assertions(1);
+    });
+  });
+
+  describe('--strict', () => {
+    it('should update the projects tsconfig with strict true', async () => {
+      await libraryGenerator(appTree, {
+        ...defaultSchema,
+        strict: true,
+      });
+      const tsconfigJson = readJson(appTree, '/libs/my-lib/tsconfig.lib.json');
+
+      expect(tsconfigJson.compilerOptions.strict).toBeTruthy();
+      expect(
+        tsconfigJson.compilerOptions.forceConsistentCasingInFileNames
+      ).toBeTruthy();
+      expect(tsconfigJson.compilerOptions.noImplicitReturns).toBeTruthy();
+      expect(
+        tsconfigJson.compilerOptions.noFallthroughCasesInSwitch
+      ).toBeTruthy();
+    });
+
+    it('should default to strict false', async () => {
+      await libraryGenerator(appTree, {
+        ...defaultSchema,
+        name: 'myLib',
+      });
+      const tsconfigJson = readJson(appTree, '/libs/my-lib/tsconfig.lib.json');
+
+      expect(tsconfigJson.compilerOptions.strict).not.toBeDefined();
+      expect(
+        tsconfigJson.compilerOptions.forceConsistentCasingInFileNames
+      ).not.toBeDefined();
+      expect(tsconfigJson.compilerOptions.noImplicitReturns).not.toBeDefined();
+      expect(
+        tsconfigJson.compilerOptions.noFallthroughCasesInSwitch
+      ).not.toBeDefined();
     });
   });
 });

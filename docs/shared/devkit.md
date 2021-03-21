@@ -1,25 +1,40 @@
-# Devkit
+# Nx Devkit
 
-Nx is a pluggable build tool, so most of its functionality is provided by plugins.
+Nx is a pluggable build tool, so most of its functionality is provided by plugins. The Nx Devkit is the underlying technology used to customize Nx to support different technologies and your own custom use-cases.
 
 Plugins have:
 
-- Generators, which are used to create/update applications, libraries, components, etc..
-- Executors, which are used to build applications and libraries, test them, lint them, etc..
+- **Generators**
+  - Anytime you run `nx generate ...`, you invoke a generator.
+  - Generators automate making changes to the file system.
+  - They are used to create/update applications, libraries, components, etc..
+- **Executors**
+  - Anytime you run `nx run ...` (or `nx test`, `nx build`), you invoke an executor.
+  - Executors define how to perform an action on a project.
+  - They are used to build applications and libraries, test them, lint them, etc..
 
-Any time you run `nx g ...`, you invoke a generator. Any time you run `nx run ...` (or `nx test`, `nx build`), you invoke an executor. All the core plugins are written using Nx Devkit. and you can use the same utilities to write your own generators and executors.
+All of the core plugins are written using Nx Devkit, and you can use the same utilities to write your own generators and executors.
 
 ## Pay as You Go
 
-As with most things in Nx, the core of Nx Devkit is very simple. It only uses language primitives and immutable objects (the host being the only exception). See "Simplest Generator" and "Simplest Executor". Most of what you will see in this guide are extra affordances--things that are optional to use, but we found very handy when building plugins.
+As with most things in Nx, the core of Nx Devkit is very simple. It only uses language primitives and immutable objects (the tree being the only exception). See [Simplest Generator](/{{framework}}/core-concepts/nx-devkit#simplest-generator) and [Simplest Executor](/{{framework}}/core-concepts/nx-devkit#simplest-executor). Most of what you will see in this guide are extra affordances -- things that are optional to use, but we found very handy when building plugins.
 
 ## Generators
 
-A generator consists of a schema and an implementation.
+Generators automate making file changes. They can create new files, overwrite existing files, delete existing files, etc. For example, adding a new application often requires creating numerous files and updating configuration. Adding a new component may require adding a storybook configuration and a suite of e2e tests. Generators can automate all of these and help you focus on actually matters.
+
+A generator has:
+
+- a schema describing the inputs (i.e., flags, args, options)
+- the implementation taking the inputs and making changes to the file system
+
+Unlike many other tools Nx generators update the file system atomically at the end. This means that if an error occurs, the file system is not partially updated. It also means that you can preview the changes to the file system without actually modifying any files.
 
 ### Schema
 
-The generator's schema describe the inputs--what you can pass into it.
+A generator's schema describes the inputs--what you can pass into it. The schema is used to validate inputs, to parse args (e.g., covert strings into numbers), to set defaults, and to power the VSCode plugin. It is written with [JSON Schema](https://json-schema.org/).
+
+#### Examples
 
 ```json
 {
@@ -44,7 +59,7 @@ The generator's schema describe the inputs--what you can pass into it.
 }
 ```
 
-The schema above defines two fields: `name` and `skipFormat`. The `name` field is a string, `skipFormat` is a boolean. The `x-prompt` property tell Nx to ask for the `name` value if one isn't given. The `skipFormat` field has the default value set to `false`. The schema language is rich and lets you use lists, enums, references, etc.. A few more examples:
+The schema above defines two fields: `name` and `skipFormat`. The `name` field is a string, `skipFormat` is a boolean. The `x-prompt` property tells Nx to ask for the `name` value if one isn't given. The `skipFormat` field has the default value set to `false`. The schema language is rich and lets you use lists, enums, references, etc.. A few more examples:
 
 ```json
 {
@@ -121,7 +136,7 @@ The schema above defines two fields: `name` and `skipFormat`. The `name` field i
 }
 ```
 
-The schema is used to validate inputs, to parse args (e.g., covert strings into numbers), to set defaults, and to power the VSCode plugin. Sometimes, however, you may not know the schema or may not care, in this case, you can set the following:
+Sometimes, you may not know the schema or may not care, in this case, you can set the following:
 
 ```json
 {
@@ -139,16 +154,26 @@ The schema is used to validate inputs, to parse args (e.g., covert strings into 
 }
 ```
 
-Because of `"additionalProperties": true` the generator above will accept any extra parameters you will pass. They, of course, won't be validated or transformed, but sometimes that's good enough.
+Because `"additionalProperties"` is `true`, the generator above will accept any extra parameters you pass. They, of course, won't be validated or transformed, but sometimes that's good enough.
 
 If you want to learn more about the schema language, check out the core plugins at [https://github.com/nrwl/nx](https://github.com/nrwl/nx) for more examples.
 
 ### Implementation
 
-The implementation function takes two arguments: the host and the options.
+The implementation is a function that takes two arguments:
 
-- The host is a implementation of a file tree that allows you to read/write files, list children, etc.. It's recommended to use the host instead of directly interacting with the file system. This enables the `--dry-run` mode, so users can try different set of options before actually invoking the generator.
-- The options are the inputs to the generator.
+- `tree`: an implementation of the file system
+  - It allows you to read/write files, list children, etc.
+  - It's recommended to use the tree instead of directly interacting with the file system.
+  - This enables the `--dry-run` mode so you can try different sets of options before actually making changes to the files.
+- `options`
+  - This is a combination of the options from `workspace.json`, command-line overrides, and schema defaults.
+  - All the options are validated and transformed in accordance with the schema.
+  - You normally don't have to validate anything in the implementation function because it won't be invoked unless the schema validation passes.
+
+The implementation can return a callback which is invoked _after changes have been made to the file system_.
+
+#### Examples
 
 ```typescript
 import {
@@ -163,29 +188,29 @@ interface Schema {
   skipFormat: boolean;
 }
 
-export default async function (host: Tree, options: Schema) {
+export default async function (tree: Tree, options: Schema) {
   generateFiles(
-    host,
+    tree,
     path.join(__dirname, 'files'),
     path.join('tools/generators', schema.name),
     options
   );
 
   if (!schema.skipFormat) {
-    await formatFiles(host);
+    await formatFiles(tree);
   }
 
   return () => {
-    installPackagesTask(host);
+    installPackagesTask(tree);
   };
 }
 ```
 
-The generator is an async function. You could create new projects and generate new files, but you could also update existing files and refactor things. It's recommended to limit all the side-effects to interacting with the host and printing to the console. Sometimes generators perform other side affects (e.g., installing npm packages). Perform them in the function returned from the generator. Nx won't run the returned function in the dry run mode.
+The generator is an async function. You could create new projects and generate new files, but you could also update existing files and refactor things. It's recommended to limit all the side-effects to interacting with the tree and printing to the console. Sometimes generators perform other side affects (e.g., installing npm packages). Perform them in the function returned from the generator. Nx won't run the returned function in the dry run mode.
 
 ### Composing Generators
 
-A generator is just an async function, so there is nothing special needed to compose generators. For instance, the following creates two React libraries:
+Generators are just async functions so they can be easily composed together. For instance, to write a generator that generates two React libraries:
 
 ```typescript
 import {
@@ -196,10 +221,10 @@ import {
 } from '@nrwl/devkit';
 import { libraryGenerator } from '@nrwl/react';
 
-export default async function (host: Tree, options: Schema) {
-  const libSideEffects1 = libraryGenerator(host, { name: options.name1 });
-  const libSideEffects2 = libraryGenerator(host, { name: options.name2 });
-  await performGlobalOperationsOnTheHost(host);
+export default async function (tree: Tree, options: Schema) {
+  const libSideEffects1 = libraryGenerator(tree, { name: options.name1 });
+  const libSideEffects2 = libraryGenerator(tree, { name: options.name2 });
+  await performOperationsOnTheTree(tree);
   return () => {
     libSideEffects1();
     libSideEffects2();
@@ -209,7 +234,7 @@ export default async function (host: Tree, options: Schema) {
 
 ### Testing Generators
 
-The Nx Devkit provides the `createTreeWithEmptyWorkspace` utility to create an empty host that can be used in tests. Other than that the tests simply invoke the generator and check the changes in the host.
+The Nx Devkit provides the `createTreeWithEmptyWorkspace` utility to create a tree with an empty workspace that can be used in tests. Other than that, the tests simply invoke the generator and check the changes are made in the tree.
 
 ```typescript
 import { readProjectConfiguration } from '@nrwl/devkit';
@@ -218,11 +243,11 @@ import createLib from './lib';
 
 describe('lib', () => {
   it('should create a lib', async () => {
-    const host = createTreeWithEmptyWorkspace();
-    // update host before invoking the generator
-    await createLib(host, { name: 'lib' });
+    const tree = createTreeWithEmptyWorkspace();
+    // update tree before invoking the generator
+    await createLib(tree, { name: 'lib' });
 
-    expect(readProjectConfiguration(host, 'lib')).toBeDefined();
+    expect(readProjectConfiguration(tree, 'lib')).toBeDefined();
   });
 });
 ```
@@ -257,9 +282,9 @@ Nx provides helpers several functions for writing generators:
 
 Each of those have detailed API docs. Check the API for more information.
 
-It's also important to stress that those are just utility functions. You can use them but you don't have to. You can instead write your own functions that take the host and do whatever you want to do with it.
+It's also important to stress that those are just utility functions. You can use them but you don't have to. You can instead write your own functions that take the tree and do whatever you want to do with it.
 
-## Simplest Generator
+### Simplest Generator
 
 ```json
 {
@@ -273,18 +298,23 @@ It's also important to stress that those are just utility functions. You can use
 ```
 
 ```typescript
-export default async function (host, opts) {
+export default async function (tree, opts) {
   console.log('options', opts);
 }
 ```
 
 ## Executors
 
-An executor consists of a schema and an implementation.
+Executors act on a project. Some examples including: building projects, testing projects, serving projects.
+
+An executor consists of the following:
+
+- a schema describing the inputs (i.e., flags, args, options).
+- the implementation taking the inputs and acting on the project.
 
 ### Schema
 
-The executor's schema describe the inputs--what you can pass into it.
+A generator's schema describes the inputs--what you can pass into it. The schema is used to validate inputs, to parse args (e.g., covert strings into numbers), to set defaults, and to power the VSCode plugin. It is written with [JSON Schema](https://json-schema.org/).
 
 ```json
 {
@@ -307,11 +337,11 @@ The executor's schema describe the inputs--what you can pass into it.
 }
 ```
 
-The schema above defines two fields: `message` and `upperCase`. The `message` field is a string, `upperCase` is a boolean. The schema support for executors and generators is identical, so see the section on generators above for more information.
+The schema above defines two fields: `message` and `upperCase`. The `message` field is a string, `upperCase` is a boolean. The schema support for executors and generators is identical. See the section on generators above for more information.
 
 ### Implementation
 
-The implementation function takes two arguments (the options and the target context) and returns a promise (or an async iterable) with the success property. The context params contains information about the workspace and the invoked target.
+The implementation function takes two arguments (the options and the executor context) and returns a promise (or an async iterable) with the success property. The context params contains information about the workspace and the invoked target.
 
 Most of the time executors return a promise.
 
@@ -392,7 +422,9 @@ async function* startDevServer(
   opts: CypressExecutorOptions,
   context: ExecutorContext
 ) {
-  const [project, target, configuration] = opts.devServerTarget.split(':');
+  const { project, target, configuration } = parseTargetString(
+    opts.devServerTarget
+  );
   for await (const output of await runExecutor<{
     success: boolean;
     baseUrl?: string;
@@ -410,15 +442,17 @@ async function* startDevServer(
 }
 ```
 
-The `runExecutor` utility will find the target in the configuration, find the executor, construct the options (as if you invoked it in the terminal) and invoke the executor. Note that runExecutor always returns an iterable instead of a promise.
+The `runExecutor` utility will find the target in the configuration, find the executor, construct the options (as if you invoked it in the terminal) and invoke the executor. Note that `runExecutor` always returns an iterable instead of a promise.
 
 ### Devkit Helper Functions
 
-- logger -- Wraps `console` to add some formatting.
-- getPackageManagerCommand -- Returns commands for the package manager used in the workspace.
-- runExecutor -- Constructs options and invokes an executor.
+- `logger` -- Wraps `console` to add some formatting.
+- `getPackageManagerCommand` -- Returns commands for the package manager used in the workspace.
+- `parseTargetString` -- Parses a target string into {project, target, configuration}.
+- `readTargetOptions` -- Reads and combines options for a given target.
+- `runExecutor` -- Constructs options and invokes an executor.
 
-## Simplest Executor
+### Simplest Executor
 
 ```json
 {
@@ -438,7 +472,28 @@ export default async function (opts) {
 
 ## Using RxJS Observables
 
-The Nx devkit only uses language primitives (promises and async iterables). It doesn't use RxJS observables, but you can use them. In this case, you either need to convert them to promise (using `toPromise`) or covert them to async iterables using `import { eachValueFrom } from 'rxjs-for-await'`.
+The Nx devkit only uses language primitives (promises and async iterables). It doesn't use RxJS observables, but you can use them and convert them to a `Promise` or an async iterable.
+
+You can convert `Observables` to a `Promise` with `toPromise`.
+
+```typescript
+import { of } from 'rxjs';
+
+export default async function (opts) {
+  return of({ success: true }).toPromise();
+}
+```
+
+You can use the [`rxjs-for-await`](https://www.npmjs.com/package/rxjs-for-await) library to convert an `Observable` into an async iterable.
+
+```ts
+import { of } from 'rxjs';
+import { eachValueFrom } from 'rxjs-for-await-async';
+
+export default async function (opts) {
+  return eachValueFrom(of({ success: true }));
+}
+```
 
 ## Using Generators and Executors
 

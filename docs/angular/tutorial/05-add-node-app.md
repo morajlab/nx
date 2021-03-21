@@ -1,6 +1,6 @@
-# Step 5: Add Node Application Implementing API
+# Angular Nx Tutorial - Step 5: Add Node Application Implementing API
 
-## Video of this Lesson
+## Nx.dev Tutorial | Angular | Step 5: Add Node Application Implementing API
 
 <iframe width="560" height="315" src="https://www.youtube.com/embed/SsCx2WErVTI" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
 
@@ -76,27 +76,27 @@ After this is done, you should see something like this:
 ```treeview
 myorg/
 ├── apps/
-│   ├── todos/
-│   ├── todos-e2e/
-│   └── api/
-│       ├── src/
-│       │   ├── app/
-│       │   │   ├── app.controller.ts
-│       │   │   ├── app.controller.spec.ts
-│       │   │   ├── app.module.ts
-│       │   │   ├── app.service.ts
-│       │   │   └── app.service.spec.ts
-│       │   ├── assets/
-│       │   ├── environments/
-│       │   │   ├── environment.ts
-│       │   │   └── environment.prod.ts
-│       │   └── main.ts
-│       ├── jest.conf.js
-│       ├── proxy.conf.json
-│       ├── tsconfig.app.json
-│       ├── tsconfig.json
-│       ├── tsconfig.spec.json
-│       └── tslint.json
+│   ├── todos/
+│   ├── todos-e2e/
+│   └── api/
+│       ├── src/
+│       │   ├── app/
+│       │   │   ├── app.controller.ts
+│       │   │   ├── app.controller.spec.ts
+│       │   │   ├── app.module.ts
+│       │   │   ├── app.service.ts
+│       │   │   └── app.service.spec.ts
+│       │   ├── assets/
+│       │   ├── environments/
+│       │   │   ├── environment.ts
+│       │   │   └── environment.prod.ts
+│       │   └── main.ts
+│       ├── jest.conf.js
+│       ├── proxy.conf.json
+│       ├── tsconfig.app.json
+│       ├── tsconfig.json
+│       ├── tsconfig.spec.json
+│       └── tslint.json
 ├── libs/
 ├── angular.json
 ├── nx.json

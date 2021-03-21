@@ -8,15 +8,18 @@ import {
   addRoute,
   findComponentImportPath,
 } from '../../utils/ast-utils';
-import { extraEslintDependencies, reactEslintJson } from '../../utils/lint';
+import {
+  extraEslintDependencies,
+  createReactEslintJson,
+} from '../../utils/lint';
 import {
   reactDomVersion,
   reactRouterDomVersion,
   reactVersion,
   typesReactRouterDomVersion,
 } from '../../utils/versions';
+import { join } from 'path';
 import { Schema } from './schema';
-import { updateBabelJestConfig } from '../../rules/update-babel-jest-config';
 import {
   addDependenciesToPackageJson,
   addProjectConfiguration,
@@ -92,13 +95,6 @@ export async function libraryGenerator(host: Tree, schema: Schema) {
       babelJest: true,
     });
     tasks.push(jestTask);
-
-    updateBabelJestConfig(host, options.projectRoot, (json) => {
-      if (options.style === 'styled-jsx') {
-        json.plugins = (json.plugins || []).concat('styled-jsx/babel');
-      }
-      return json;
-    });
   }
 
   if (options.component) {
@@ -155,13 +151,12 @@ async function addLinting(host: Tree, options: NormalizedSchema) {
     return;
   }
 
+  const reactEslintJson = createReactEslintJson(options.projectRoot);
+
   updateJson(
     host,
     joinPathFragments(options.projectRoot, '.eslintrc.json'),
-    (json) => {
-      json.extends = [...reactEslintJson.extends, ...json.extends];
-      return json;
-    }
+    () => reactEslintJson
   );
 
   const installTask = await addDependenciesToPackageJson(
@@ -223,6 +218,22 @@ function addProject(host: Tree, options: NormalizedSchema) {
   });
 }
 
+function updateLibTsConfig(tree: Tree, options: NormalizedSchema) {
+  updateJson(tree, join(options.projectRoot, 'tsconfig.lib.json'), (json) => {
+    if (options.strict) {
+      json.compilerOptions = {
+        ...json.compilerOptions,
+        forceConsistentCasingInFileNames: true,
+        strict: true,
+        noImplicitReturns: true,
+        noFallthroughCasesInSwitch: true,
+      };
+    }
+
+    return json;
+  });
+}
+
 function updateTsConfig(host: Tree, options: NormalizedSchema) {
   updateJson(host, 'tsconfig.base.json', (json) => {
     const c = json.compilerOptions;
@@ -253,6 +264,7 @@ function createFiles(host: Tree, options: NormalizedSchema) {
     {
       ...options,
       ...names(options.name),
+      strict: undefined,
       tmpl: '',
       offsetFromRoot: offsetFromRoot(options.projectRoot),
     }
@@ -265,6 +277,8 @@ function createFiles(host: Tree, options: NormalizedSchema) {
   if (options.js) {
     toJS(host);
   }
+
+  updateLibTsConfig(host, options);
 }
 
 function updateAppRoutes(host: Tree, options: NormalizedSchema) {

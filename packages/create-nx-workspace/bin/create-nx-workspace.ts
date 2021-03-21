@@ -1,16 +1,33 @@
 #!/usr/bin/env node
 
-import { output } from '@nrwl/workspace/src/utilities/output';
-import { unparse } from '@nrwl/workspace/src/tasks-runner/utils';
-import { Schema, Preset } from '@nrwl/workspace/src/generators/new/new';
-import { getPackageManagerCommand } from '@nrwl/tao/src/shared/package-manager';
-import { execSync } from 'child_process';
+import { exec, execSync } from 'child_process';
 import { writeFileSync } from 'fs';
 import * as inquirer from 'inquirer';
 import * as path from 'path';
 import { dirSync } from 'tmp';
 import * as yargsParser from 'yargs-parser';
-import { showNxWarning } from './shared';
+import { showNxWarning, unparse } from './shared';
+import { output } from './output';
+import * as ora from 'ora';
+
+import {
+  getPackageManagerCommand,
+  getPackageManagerVersion,
+} from './package-manager';
+
+export enum Preset {
+  Empty = 'empty',
+  OSS = 'oss',
+  WebComponents = 'web-components',
+  Angular = 'angular',
+  AngularWithNest = 'angular-nest',
+  React = 'react',
+  ReactWithExpress = 'react-express',
+  NextJs = 'next',
+  Gatsby = 'gatsby',
+  Nest = 'nest',
+  Express = 'express',
+}
 
 const presetOptions: { value: Preset; name: string }[] = [
   {
@@ -40,6 +57,10 @@ const presetOptions: { value: Preset; name: string }[] = [
     name: 'nest              [a workspace with a single Nest application]',
   },
   {
+    value: Preset.Express,
+    name: 'express           [a workspace with a single Express application]',
+  },
+  {
     value: Preset.WebComponents,
     name:
       'web components    [a workspace with a single app built using web components]',
@@ -66,12 +87,7 @@ const cliVersion = 'NX_VERSION';
 const nxVersion = 'NX_VERSION';
 const prettierVersion = 'PRETTIER_VERSION';
 
-interface WorkspaceArgs extends Schema {
-  _?: string[];
-  help?: boolean;
-}
-
-const parsedArgs: WorkspaceArgs = yargsParser(process.argv.slice(2), {
+const parsedArgs: any = yargsParser(process.argv.slice(2), {
   string: [
     'cli',
     'preset',
@@ -107,7 +123,7 @@ determineWorkspaceName(parsedArgs).then((name) => {
           return determineLinter(preset, parsedArgs).then((linter) => {
             return askAboutNxCloud(parsedArgs).then((nxCloud) => {
               const tmpDir = createSandbox(packageManager);
-              createApp(tmpDir, name, {
+              return createApp(tmpDir, name, {
                 ...parsedArgs,
                 cli,
                 preset,
@@ -115,9 +131,10 @@ determineWorkspaceName(parsedArgs).then((name) => {
                 style,
                 linter,
                 nxCloud,
+              }).then(() => {
+                showNxWarning(name);
+                pointToTutorialAndCourse(preset);
               });
-              showNxWarning(name);
-              pointToTutorialAndCourse(preset);
             });
           });
         });
@@ -161,7 +178,7 @@ function showHelp() {
 `);
 }
 
-function determineWorkspaceName(parsedArgs: WorkspaceArgs): Promise<string> {
+function determineWorkspaceName(parsedArgs: any): Promise<string> {
   const workspaceName: string = parsedArgs._[0];
 
   if (workspaceName) {
@@ -188,7 +205,7 @@ function determineWorkspaceName(parsedArgs: WorkspaceArgs): Promise<string> {
     });
 }
 
-function determinePreset(parsedArgs: WorkspaceArgs): Promise<Preset> {
+function determinePreset(parsedArgs: any): Promise<Preset> {
   if (parsedArgs.preset) {
     if (Object.values(Preset).indexOf(parsedArgs.preset) === -1) {
       output.error({
@@ -218,10 +235,7 @@ function determinePreset(parsedArgs: WorkspaceArgs): Promise<Preset> {
     .then((a: { Preset: Preset }) => a.Preset);
 }
 
-function determineAppName(
-  preset: Preset,
-  parsedArgs: WorkspaceArgs
-): Promise<string> {
+function determineAppName(preset: Preset, parsedArgs: any): Promise<string> {
   if (preset === Preset.Empty || preset === Preset.OSS) {
     return Promise.resolve('');
   }
@@ -252,7 +266,7 @@ function determineAppName(
 
 function determineCli(
   preset: Preset,
-  parsedArgs: WorkspaceArgs
+  parsedArgs: any
 ): Promise<'nx' | 'angular'> {
   if (parsedArgs.cli) {
     if (['nx', 'angular'].indexOf(parsedArgs.cli) === -1) {
@@ -276,11 +290,12 @@ function determineCli(
   }
 }
 
-function determineStyle(preset: Preset, parsedArgs: WorkspaceArgs) {
+function determineStyle(preset: Preset, parsedArgs: any) {
   if (
     preset === Preset.Empty ||
     preset === Preset.OSS ||
-    preset === Preset.Nest
+    preset === Preset.Nest ||
+    preset === Preset.Express
   ) {
     return Promise.resolve(null);
   }
@@ -363,7 +378,7 @@ function determineStyle(preset: Preset, parsedArgs: WorkspaceArgs) {
   return Promise.resolve(parsedArgs.style);
 }
 
-function determineLinter(preset: Preset, parsedArgs: WorkspaceArgs) {
+function determineLinter(preset: Preset, parsedArgs: any) {
   if (!parsedArgs.linter) {
     if (preset === Preset.Angular || preset === Preset.AngularWithNest) {
       return inquirer
@@ -403,7 +418,13 @@ function determineLinter(preset: Preset, parsedArgs: WorkspaceArgs) {
 }
 
 function createSandbox(packageManager: string) {
-  console.log(`Creating a sandbox with Nx...`);
+  output.log({
+    title: 'Nx is creating your workspace.',
+    bodyLines: [
+      'To make sure the command works reliably in all environments, and that the preset is applied correctly,',
+      `Nx will run "${packageManager} install" several times. Please wait.`,
+    ],
+  });
   const tmpDir = dirSync().name;
   writeFileSync(
     path.join(tmpDir, 'package.json'),
@@ -426,28 +447,48 @@ function createSandbox(packageManager: string) {
   return tmpDir;
 }
 
-function createApp(tmpDir: string, name: string, parsedArgs: WorkspaceArgs) {
+async function createApp(tmpDir: string, name: string, parsedArgs: any) {
   const { _, cli, ...restArgs } = parsedArgs;
   const args = unparse(restArgs).join(' ');
 
   const pmc = getPackageManagerCommand(packageManager);
   const command = `new ${name} ${args} --collection=@nrwl/workspace`;
-  console.log(command);
 
-  let nxWorkspaceRoot = process.cwd().replace(/\\/g, '/');
-  if (process.platform === 'win32') {
-    nxWorkspaceRoot = `\\"${nxWorkspaceRoot}\\"`;
-  } else {
-    nxWorkspaceRoot = `"${nxWorkspaceRoot}"`;
+  let nxWorkspaceRoot = `"${process.cwd().replace(/\\/g, '/')}"`;
+
+  // If path contains spaces there is a problem in Windows for npm@6.
+  // In this case we have to escape the wrapping quotes.
+  if (
+    process.platform === 'win32' &&
+    /\s/.test(nxWorkspaceRoot) &&
+    packageManager === 'npm'
+  ) {
+    const pmVersion = +getPackageManagerVersion(packageManager).split('.')[0];
+    if (pmVersion < 7) {
+      nxWorkspaceRoot = `\\"${nxWorkspaceRoot.slice(1, -1)}\\"`;
+    }
   }
+  const fullCommand = `${pmc.exec} tao ${command}/collection.json --cli=${cli} --nxWorkspaceRoot=${nxWorkspaceRoot}`;
+  const spinner = ora('Creating your workspace').start();
 
-  execSync(
-    `${pmc.exec} tao ${command}/collection.json --cli=${cli} --nxWorkspaceRoot=${nxWorkspaceRoot}`,
-    {
+  try {
+    await execAndWait(fullCommand, tmpDir);
+  } catch (e) {
+    output.error({
+      title:
+        'Something went wrong. Rerunning the command with verbose logging.',
+    });
+    execSync(fullCommand, {
       stdio: [0, 1, 2],
       cwd: tmpDir,
-    }
-  );
+    });
+  } finally {
+    spinner.stop();
+  }
+
+  output.success({
+    title: 'Nx has successfully created the workspace.',
+  });
 
   if (parsedArgs.nxCloud) {
     output.addVerticalSeparator();
@@ -458,7 +499,19 @@ function createApp(tmpDir: string, name: string, parsedArgs: WorkspaceArgs) {
   }
 }
 
-async function askAboutNxCloud(parsedArgs: WorkspaceArgs) {
+function execAndWait(command: string, cwd: string) {
+  return new Promise((res, rej) => {
+    exec(command, { cwd }, (error, stdout, stderr) => {
+      if (error) {
+        rej();
+      } else {
+        res(null);
+      }
+    });
+  });
+}
+
+async function askAboutNxCloud(parsedArgs: any) {
   if (parsedArgs.nxCloud === undefined) {
     return inquirer
       .prompt([
@@ -497,7 +550,7 @@ function pointToTutorialAndCourse(preset: Preset) {
       // case Preset.Gatsby:
       output.addVerticalSeparator();
       output.note({
-        title: title,
+        title,
         bodyLines: [
           `https://nx.dev/react/tutorial/01-create-application`,
           ...pointToFreeCourseOnEgghead(),
@@ -508,7 +561,7 @@ function pointToTutorialAndCourse(preset: Preset) {
     case Preset.AngularWithNest:
       output.addVerticalSeparator();
       output.note({
-        title: title,
+        title,
         bodyLines: [
           `https://nx.dev/angular/tutorial/01-create-application`,
           ...pointToFreeCourseOnYoutube(),

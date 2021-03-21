@@ -36,6 +36,8 @@ describe('create-nx-workspace', () => {
     runCreateWorkspace(wsName, {
       preset: 'oss',
     });
+
+    expectNoAngularDevkit();
   });
 
   it('should be able to create an angular workspace', () => {
@@ -99,6 +101,16 @@ describe('create-nx-workspace', () => {
     const appName = uniq('app');
     runCreateWorkspace(wsName, {
       preset: 'react-express',
+      style: 'css',
+      appName,
+    });
+  });
+
+  it('should be able to create an express workspace', () => {
+    const wsName = uniq('express');
+    const appName = uniq('app');
+    runCreateWorkspace(wsName, {
+      preset: 'express',
       style: 'css',
       appName,
     });

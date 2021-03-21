@@ -25189,7 +25189,7 @@ export const mediumGraph: ProjectGraphCache = {
       type: 'npm',
       name: 'npm:@types/node',
       data: {
-        version: '~8.9.4',
+        version: '14.14.33',
         packageName: '@types/node',
         files: [],
       },
@@ -25450,7 +25450,7 @@ export const mediumGraph: ProjectGraphCache = {
       type: 'npm',
       name: 'npm:dotenv',
       data: {
-        version: '6.2.0',
+        version: '8.2.0',
         packageName: 'dotenv',
         files: [],
       },
@@ -25468,7 +25468,7 @@ export const mediumGraph: ProjectGraphCache = {
       type: 'npm',
       name: 'npm:eslint-config-prettier',
       data: {
-        version: '6.0.0',
+        version: '8.1.0',
         packageName: 'eslint-config-prettier',
         files: [],
       },
