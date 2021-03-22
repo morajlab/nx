@@ -1,7 +1,0 @@
-{
-  "name": "tilde-dep",
-  "version": "1.1.1",
-  "dependencies": {
-    "react": "^15.6.1"
-  }
-}
